@@ -71,6 +71,7 @@ void initSerial()
 
 void process()
 {
+  int i;
   if (collision_ir == LOW) {
     stopDead(1000);
     return;
