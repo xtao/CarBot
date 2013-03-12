@@ -8,12 +8,20 @@
 #include <Servo.h> 
 
 /* ir pin */
-#define PIN_IR1_LEFT A0
-#define PIN_IR2_LEFT A1
-#define PIN_IR3_LEFT A2
-#define PIN_IR3_RIGHT A3
-#define PIN_IR2_RIGHT A4
-#define PIN_IR1_RIGHT A5
+#define PIN_IR1_LEFT A3
+#define PIN_IR2_LEFT A2
+#define PIN_IR2_RIGHT A1
+#define PIN_IR1_RIGHT A0
+
+#define IR1_LEFT_THRESHOLD 350
+#define IR2_LEFT_THRESHOLD 230
+#define IR2_RIGHT_THRESHOLD 230
+#define IR1_RIGHT_THRESHOLD 320
+
+#define IR1_LEFT 0
+#define IR2_LEFT 1
+#define IR2_RIGHT 2
+#define IR1_RIGHT 3
 
 /* collision pin */
 #define PIN_COLLISION_IR 3
@@ -21,8 +29,8 @@
 /* servo pin */
 #define PIN_SERVO 2
 
-#define IR_NUM 6
-#define IR_NUM_MAX 6
+#define IR_NUM 4
+#define IR_NUM_MAX 4
 
 #define STATE_TO_TOWER 0
 #define STATE_TO_HOME 1
@@ -33,10 +41,10 @@
 int collision_ir = 0;
 int ir_array[IR_NUM] = { 0 };
 const int ir_pin_array[IR_NUM_MAX] = {
-   PIN_IR1_LEFT, PIN_IR2_LEFT, PIN_IR3_LEFT, PIN_IR3_RIGHT, PIN_IR2_RIGHT, PIN_IR1_RIGHT
+   PIN_IR1_LEFT, PIN_IR2_LEFT, PIN_IR2_RIGHT, PIN_IR1_RIGHT
 };
 const int ir_pos_map[IR_NUM_MAX] = {
-    -5, -3, -1, 1, 3, 5
+    -3, -1, 1, 3
 };
 
 int car_direction = STATE_TO_TOWER;
@@ -47,7 +55,7 @@ void setup()
   initSerial();
   initMotor();
   initIR();
-  initServo();
+  //initServo();
   delay(1000);
 }
 
@@ -55,6 +63,7 @@ void loop()
 { 
   readIR();
   process();
+  //runForward(120, 2);
   driveMotor();
 }
 
@@ -72,31 +81,19 @@ void initSerial()
 void process()
 {
   int i;
-  if (collision_ir == LOW) {
-    stopDead(1000);
-    return;
-  }
-  /* use 5 irs */
-  if (ir_array[4] == LOW && ir_array[3] == LOW && ir_array[2] == LOW) {
-    runRight(180, 2);
-    // specific process
-    for (i = 0; i < 6000; i++) {
-      driveMotor();
-    }
-  } else if (ir_array[4] == LOW && ir_array[2] == LOW) {
-    runRight(180, 2);
-  } else if (ir_array[3] == LOW && ir_array[2] == LOW) {
+  /* use 4 irs */
+  if (ir_array[IR1_RIGHT] > IR1_RIGHT_THRESHOLD && ir_array[IR2_RIGHT] > IR2_RIGHT_THRESHOLD) {
     runRight(150, 2);
-  } else if (ir_array[2] == LOW) {
-    runByPosition(0, 2);
-  } else if (ir_array[1] == LOW) {
-    runByPosition(4, 2);
-  } else if (ir_array[3] == LOW) {
-    runByPosition(-4, 2);
-  } else if (ir_array[0] == LOW) {
+  } else if (ir_array[IR2_LEFT] > IR2_LEFT_THRESHOLD) {
+    runByPosition(2, 2);
+  } else if (ir_array[IR2_RIGHT] > IR2_RIGHT_THRESHOLD) {
+    runByPosition(-2, 2);
+  } else if (ir_array[IR1_LEFT] > IR1_LEFT_THRESHOLD) {
     runByPosition(6, 2);
-  } else if (ir_array[4] == LOW) {
+  } else if (ir_array[IR1_RIGHT] > IR1_RIGHT_THRESHOLD) {
     runByPosition(-6, 2);
+  } else {
+    runByPosition(0, 2);
   }
 }
 
@@ -108,7 +105,7 @@ void initIR()
 {
   int i;
   // setting input pins
-  for (i = 0; i < IR_NUM_MAX; i++) {
+  for (i = 0; i < IR_NUM_MAX; i++) { 
     pinMode(ir_pin_array[i], INPUT);
   }
   pinMode(PIN_COLLISION_IR, INPUT);
@@ -118,7 +115,7 @@ int readIR()
 {
   int i;
   for (i = 0; i < IR_NUM; i++) {
-     ir_array[i] = digitalRead(ir_pin_array[i]);
+     ir_array[i] = analogRead(ir_pin_array[i]);
   }
   collision_ir = digitalRead(PIN_COLLISION_IR);
 }
