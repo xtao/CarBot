@@ -8,12 +8,15 @@
 #include <Servo.h> 
 
 /* ir pin */
-#define PIN_IR1_LEFT A0
-#define PIN_IR2_LEFT A1
-#define PIN_IR3_LEFT A2
-#define PIN_IR3_RIGHT A3
-#define PIN_IR2_RIGHT A4
-#define PIN_IR1_RIGHT A5
+#define PIN_IR1_LEFT A3
+#define PIN_IR2_LEFT A2
+#define PIN_IR2_RIGHT A1
+#define PIN_IR1_RIGHT A0
+
+#define IR1_LEFT 0
+#define IR2_LEFT 1
+#define IR2_RIGHT 2
+#define IR1_RIGHT 3
 
 /* collision pin */
 #define PIN_COLLISION_IR 3
@@ -21,8 +24,8 @@
 /* servo pin */
 #define PIN_SERVO 2
 
-#define IR_NUM 6
-#define IR_NUM_MAX 6
+#define IR_NUM 4
+#define IR_NUM_MAX 4
 
 #define STATE_TO_TOWER 0
 #define STATE_TO_HOME 1
@@ -33,10 +36,13 @@
 int collision_ir = 0;
 int ir_array[IR_NUM] = { 0 };
 const int ir_pin_array[IR_NUM_MAX] = {
-   PIN_IR1_LEFT, PIN_IR2_LEFT, PIN_IR3_LEFT, PIN_IR3_RIGHT, PIN_IR2_RIGHT, PIN_IR1_RIGHT
+   PIN_IR1_LEFT, PIN_IR2_LEFT, PIN_IR2_RIGHT, PIN_IR1_RIGHT
 };
+int ir_max_array[IR_NUM] = { 0 };
+int ir_min_array[IR_NUM] = { 32767 };
+int ir_threshold_array[IR_NUM] = { 0 };
 const int ir_pos_map[IR_NUM_MAX] = {
-    -5, -3, -1, 1, 3, 5
+    -3, -1, 1, 3
 };
 
 int car_direction = STATE_TO_TOWER;
@@ -48,7 +54,7 @@ void setup()
   initMotor();
   initIR();
   initServo();
-  delay(1000);
+  calibration();
 }
 
 void loop() 
@@ -69,27 +75,36 @@ void initSerial()
   Serial.begin(9600);
 }
 
+void calibration()
+{
+  int i;
+  int count = 50;
+  while (count--) {
+    readIR();
+    for (i = 0; i < IR_NUM; i++) {
+        if (ir_array[i] > ir_max_array[i]) {
+            ir_max_array[i] = ir_array[i];
+        }
+        if (ir_array[i] < ir_min_array[i]) {
+            ir_min_array[i] = ir_array[i];
+        }
+    }
+    delay(100);
+  }
+  for (i = 0; i < IR_NUM; i++) {
+    ir_threshold_array[i] = (ir_max_array[i] + ir_min_array[i])/2;
+  }
+}
+
 void process()
 {
-  if (collision_ir == LOW) {
-    stopDead(1000);
-    return;
-  }
-  /* use 5 irs */
-  if (ir_array[0] == LOW && ir_array[2] == LOW) {
-    runLeft(150, 2);
-  } else if (ir_array[1] == LOW && ir_array[2] == LOW) {
-    runLeft(120, 2);
-  } else if (ir_array[2] == LOW) {
-    runForward(150, 2);
-  } else if (ir_array[1] == LOW) { 
-    runLeft(120, 2);
-  } else if (ir_array[3] == LOW) {
-    runRight(120, 2);
-  } else if (ir_array[0] == LOW) {
-    runLeft(150 ,2);
-  } else if (ir_array[4] == LOW) {
-    runRight(150, 2);
+  /* use 4 irs */
+  if (ir_array[IR2_LEFT] > ir_threshold_array[IR2_LEFT]) {
+    runByPosition(2, 2);
+  } else if (ir_array[IR2_RIGHT] > ir_threshold_array[IR2_RIGHT]) {
+    runByPosition(-2, 2);
+  } else {
+    runByPosition(0, 2);
   }
 }
 

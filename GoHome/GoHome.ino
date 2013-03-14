@@ -24,7 +24,7 @@
 #define IR1_RIGHT 3
 
 /* collision pin */
-#define PIN_COLLISION_IR 3
+#define PIN_COLLISION_IR 8
 
 /* servo pin */
 #define PIN_SERVO 2
@@ -63,7 +63,6 @@ void loop()
 { 
   readIR();
   process();
-  //runForward(120, 2);
   driveMotor();
 }
 

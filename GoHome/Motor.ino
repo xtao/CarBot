@@ -3,7 +3,6 @@
  Copyright @ InfiniteSense.com
 */
 
-/* pwm port 3, 5, 6, 9, 10, 11 */
 #define PIN_PWM_LEFT 11
 #define PIN_DIR_LEFT 10
 #define PIN_PWM_RIGHT 13
