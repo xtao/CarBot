@@ -22,7 +22,7 @@
 #define PIN_COLLISION_IR 3
 
 /* servo pin */
-#define PIN_SERVO 2
+#define PIN_SERVO 8
 
 #define IR_NUM 4
 #define IR_NUM_MAX 4
@@ -32,14 +32,17 @@
 #define STATE_POST_BALL 2
 #define STATE_FINDING_LINE 3
 
+#define IR_WHITE 185,116,149,196
+#define IR_BLACK 426,302,322,398
+
 
 int collision_ir = 0;
 int ir_array[IR_NUM] = { 0 };
 const int ir_pin_array[IR_NUM_MAX] = {
    PIN_IR1_LEFT, PIN_IR2_LEFT, PIN_IR2_RIGHT, PIN_IR1_RIGHT
 };
-int ir_max_array[IR_NUM] = { 0 };
-int ir_min_array[IR_NUM] = { 32767 };
+int ir_max_array[IR_NUM] = { IR_BLACK };
+int ir_min_array[IR_NUM] = { IR_WHITE };
 int ir_threshold_array[IR_NUM] = { 0 };
 const int ir_pos_map[IR_NUM_MAX] = {
     -3, -1, 1, 3
@@ -53,8 +56,8 @@ void setup()
   initSerial();
   initMotor();
   initIR();
-  initServo();
-  calibration();
+  //initServo();
+  //calibration();
 }
 
 void loop() 
@@ -78,19 +81,6 @@ void initSerial()
 void calibration()
 {
   int i;
-  int count = 50;
-  while (count--) {
-    readIR();
-    for (i = 0; i < IR_NUM; i++) {
-        if (ir_array[i] > ir_max_array[i]) {
-            ir_max_array[i] = ir_array[i];
-        }
-        if (ir_array[i] < ir_min_array[i]) {
-            ir_min_array[i] = ir_array[i];
-        }
-    }
-    delay(100);
-  }
   for (i = 0; i < IR_NUM; i++) {
     ir_threshold_array[i] = (ir_max_array[i] + ir_min_array[i])/2;
   }
@@ -100,11 +90,9 @@ void process()
 {
   /* use 4 irs */
   if (ir_array[IR2_LEFT] > ir_threshold_array[IR2_LEFT]) {
-    runByPosition(2, 2);
+    runByPosition(3, 2);
   } else if (ir_array[IR2_RIGHT] > ir_threshold_array[IR2_RIGHT]) {
-    runByPosition(-2, 2);
-  } else {
-    runByPosition(0, 2);
+    runByPosition(-3, 2);
   }
 }
 
@@ -126,7 +114,7 @@ int readIR()
 {
   int i;
   for (i = 0; i < IR_NUM; i++) {
-     ir_array[i] = digitalRead(ir_pin_array[i]);
+     ir_array[i] = analogRead(ir_pin_array[i]);
   }
   collision_ir = digitalRead(PIN_COLLISION_IR);
 }
